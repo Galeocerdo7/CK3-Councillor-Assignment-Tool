@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Optimal Store Assignment Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 30px auto;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    td, th {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+    }
+    input {
+        width: 90%;
+        padding: 4px;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    #results {
+        margin-top: 25px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        background: #f9f9f9;
+    }
+</style>
+</head>
+<body>
+
+<h2>Optimal Store Assignment Calculator</h2>
+<p>Enter your 5 items and the value each would earn at each of the 4 stores.  
+The calculator will find the assignment that maximizes total value (using a Hungarian algorithm).</p>
+
+<table>
+<thead>
+<tr>
+    <th>Item Name</th>
+    <th>Store 1</th>
+    <th>Store 2</th>
+    <th>Store 3</th>
+    <th>Store 4</th>
+</tr>
+</thead>
+<tbody id="inputRows">
+</tbody>
+</table>
+
+<button onclick="computeAssignment()">Optimize Assignment</button>
+
+<div id="results"></div>
+
+<script>
+// ------------------------------------------------------------
+// Add 5 rows of inputs (item name + 4 store values)
+// ------------------------------------------------------------
+for (let i = 0; i < 5; i++) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td><input type="text" id="item${i}" placeholder="Item ${String.fromCharCode(65+i)}"></td>
+        <td><input type="number" id="v${i}_0" value=""></td>
+        <td><input type="number" id="v${i}_1" value=""></td>
+        <td><input type="number" id="v${i}_2" value=""></td>
+        <td><input type="number" id="v${i}_3" value=""></td>
+    `;
+    document.getElementById("inputRows").appendChild(row);
+}
+
+// ------------------------------------------------------------
+// Hungarian Algorithm (for square cost matrix)
+// ------------------------------------------------------------
+function hungarian(matrix) {
+    const n = matrix.length;
+
+    // Step 1: Row reduction
+    for (let i = 0; i < n; i++) {
+        const minVal = Math.min(...matrix[i]);
+        for (let j = 0; j < n; j++) matrix[i][j] -= minVal;
+    }
+
+    // Step 2: Column reduction
+    for (let j = 0; j < n; j++) {
+        let colMin = Infinity;
+        for (let i = 0; i < n; i++) colMin = Math.min(colMin, matrix[i][j]);
+        for (let i = 0; i < n; i++) matrix[i][j] -= colMin;
+    }
+
+    // Step 3+: Try to find zero matching (simplified)
+    // This is a simple DFS-based bipartite matcher for zeros.
+    const matchR = Array(n).fill(-1);
+
+    function bpm(u, seen) {
+        for (let v = 0; v < n; v++) {
+            if (matrix[u][v] === 0 && !seen[v]) {
+                seen[v] = true;
+                if (matchR[v] < 0 || bpm(matchR[v], seen)) {
+                    matchR[v] = u;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    for (let u = 0; u < n; u++) {
+        const seen = Array(n).fill(false);
+        bpm(u, seen);
+    }
+
+    // matchR[v] = u means "u assigned to v"
+    const assignment = Array(n).fill(-1);
+    for (let j = 0; j < n; j++) {
+        if (matchR[j] !== -1) assignment[matchR[j]] = j;
+    }
+    return assignment;
+}
+
+// ------------------------------------------------------------
+// Main function to compute optimal assignment
+// ------------------------------------------------------------
+function computeAssignment() {
+    // Read item names
+    const itemNames = [];
+    for (let i = 0; i < 5; i++) {
+        let name = document.getElementById(`item${i}`).value.trim();
+        if (name === "") name = `Item ${String.fromCharCode(65+i)}`;
+        itemNames.push(name);
+    }
+
+    // Read value matrix
+    let values = [];
+    for (let i = 0; i < 5; i++) {
+        values.push([
+            Number(document.getElementById(`v${i}_0`).value) || 0,
+            Number(document.getElementById(`v${i}_1`).value) || 0,
+            Number(document.getElementById(`v${i}_2`).value) || 0,
+            Number(document.getElementById(`v${i}_3`).value) || 0
+        ]);
+    }
+
+    // Add dummy 5th store column = 0
+    for (let i = 0; i < 5; i++) values[i].push(0);
+
+    // Convert to a cost matrix (maximize → minimize)
+    let maxVal = -Infinity;
+    for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++)
+            maxVal = Math.max(maxVal, values[i][j]);
+    }
+
+    let cost = values.map(row => row.map(v => maxVal - v));
+
+    // Solve assignment
+    let assignment = hungarian(cost);
+
+    // Prepare results
+    let html = `<h3>Optimal Assignment</h3>
+    <table>
+    <tr><th>Item</th><th>Store</th><th>Value</th></tr>`;
+
+    let total = 0;
+    const storeNames = ["Store 1","Store 2","Store 3","Store 4","NOT SOLD"];
+
+    for (let i = 0; i < 5; i++) {
+        const store = assignment[i];
+        const storeName = storeNames[store];
+        const val = values[i][store];
+        total += val;
+
+        html += `<tr>
+            <td>${itemNames[i]}</td>
+            <td>${storeName}</td>
+            <td>${val}</td>
+        </tr>`;
+    }
+    html += `</table><h3>Total Value: ${total}</h3>`;
+
+    document.getElementById("results").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
