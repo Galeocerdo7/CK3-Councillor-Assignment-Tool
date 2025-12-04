@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Optimal Store Assignment Calculator</title>
+<title>Optimal CK3 Councillor Assignment Calculator</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -38,18 +38,19 @@
 </head>
 <body>
 
-<h2>Optimal Store Assignment Calculator</h2>
-<p>Enter your 5 items and the value each would earn at each of the 4 stores.  
-The calculator will find the assignment that maximizes total value (using a Hungarian algorithm).</p>
+<h2>Optimal CK3 Councillor Assignment Calculator</h2>
+<p>Enter your 5 powerful vassals (or any 5 candidates you want to compare) and the level of each of the skills.  
+The calculator will find the assignment that maximizes total value (using a Hungarian algorithm). The candidate
+that helps the least will appear as unassigned.</p>
 
 <table>
 <thead>
 <tr>
-    <th>Item Name</th>
-    <th>Store 1</th>
-    <th>Store 2</th>
-    <th>Store 3</th>
-    <th>Store 4</th>
+    <th>Candidate Name</th>
+    <th>Diplomacy</th>
+    <th>Martial</th>
+    <th>Stewardship</th>
+    <th>Intrigue</th>
 </tr>
 </thead>
 <tbody id="inputRows">
@@ -62,7 +63,7 @@ The calculator will find the assignment that maximizes total value (using a Hung
 
 <script>
 // ------------------------------------------------------------
-// Add 5 rows of inputs (item name + 4 store values)
+// Add 5 rows of inputs (councillor name + 4 skill values)
 // ------------------------------------------------------------
 for (let i = 0; i < 5; i++) {
     const row = document.createElement("tr");
@@ -169,7 +170,7 @@ function computeAssignment() {
     <tr><th>Item</th><th>Store</th><th>Value</th></tr>`;
 
     let total = 0;
-    const storeNames = ["Store 1","Store 2","Store 3","Store 4","NOT SOLD"];
+    const storeNames = ["Diplomacy","Martial","Stewardship","Intrigue","Unassigned"];
 
     for (let i = 0; i < 5; i++) {
         const store = assignment[i];
@@ -191,3 +192,4 @@ function computeAssignment() {
 
 </body>
 </html>
+
